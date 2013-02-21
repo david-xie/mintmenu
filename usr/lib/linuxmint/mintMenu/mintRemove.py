@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 
 try:
-     import pygtk
-     pygtk.require("2.0")
+     import gi
+     pyGtk.require("2.0")
 except:
       pass
 try:
     import sys
     import string
-    import gtk
-    import gtk.glade
+    from gi.repository import Gtk
+    import Gtk.glade
     import os
     import commands
     import threading
@@ -22,7 +22,7 @@ except Exception, detail:
 
 from subprocess import Popen, PIPE
 
-gtk.gdk.threads_init()
+Gdk.threads_init()
 
 # i18n
 gettext.install("mintmenu", "/usr/share/linuxmint/locale")
@@ -57,7 +57,7 @@ class RemoveExecuter(threading.Thread):
         comnd = Popen(' '.join(cmd), shell=True)
 	returnCode = comnd.wait()
 	f.close()
-	gtk.main_quit()
+	Gtk.main_quit()
 	sys.exit(0)
 		
 class mintRemoveWindow:
@@ -67,15 +67,15 @@ class mintRemoveWindow:
 
         #Set the Glade file
         self.gladefile = "/usr/lib/linuxmint/mintMenu/mintRemove.glade"
-        wTree = gtk.glade.XML(self.gladefile,"main_window")
+        wTree = Gtk.glade.XML(self.gladefile,"main_window")
 	wTree.get_widget("main_window").set_icon_from_file("/usr/lib/linuxmint/mintMenu/icon.svg")
 	wTree.get_widget("main_window").set_title("")
 	wTree.get_widget("main_window").connect("destroy", self.giveUp)
 
 	# Get the window socket (needed for synaptic later on)
 	vbox = wTree.get_widget("vbox1")
-	socket = gtk.Socket()
-	vbox.pack_start(socket)
+	socket = Gtk.Socket()
+	vbox.pack_start(socket, True, True, 0)
 	socket.show()
 	window_id = repr(socket.get_id())
         
@@ -84,30 +84,30 @@ class mintRemoveWindow:
 	package = commands.getoutput("dpkg -S " + self.desktopFile)
 	package = package[:package.find(":")]
 	if package == "dpkg":
-		warnDlg = gtk.Dialog(title="MintMenu", parent=None, flags=0, buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
-		warnDlg.add_button(gtk.STOCK_REMOVE, gtk.RESPONSE_OK)
+		warnDlg = Gtk.Dialog(title="MintMenu", parent=None, flags=0, buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL))
+		warnDlg.add_button(Gtk.STOCK_REMOVE, Gtk.ResponseType.OK)
 		warnDlg.vbox.set_spacing(10)
 		warnDlg.set_icon_from_file("/usr/share/linuxmint/logo.png")
-		labelSpc = gtk.Label(" ")
-		warnDlg.vbox.pack_start(labelSpc)	
+		labelSpc = Gtk.Label(label=" ")
+		warnDlg.vbox.pack_start(labelSpc, True, True, 0)	
 		labelSpc.show()
 		warnText = "<b>" + _("No matching package found") + "</b>"
 		infoText = _("Do you want to remove this menu entry?") + " (" + self.desktopFile + ")"
-		label = gtk.Label(warnText)
-		lblInfo = gtk.Label(infoText)
+		label = Gtk.Label(label=warnText)
+		lblInfo = Gtk.Label(label=infoText)
 		label.set_use_markup(True)
 		lblInfo.set_use_markup(True)
-		warnDlg.vbox.pack_start(label)
-		warnDlg.vbox.pack_start(lblInfo)
+		warnDlg.vbox.pack_start(label, True, True, 0)
+		warnDlg.vbox.pack_start(lblInfo, True, True, 0)
 		label.show()
 		lblInfo.show()
 		response = warnDlg.run()
-		if response == gtk.RESPONSE_OK :
+		if response == Gtk.ResponseType.OK :
 			print "removing " + self.desktopFile + "*.desktop"
 			os.system("rm -f " + self.desktopFile)
 			os.system("rm -f " + self.desktopFile + "*.desktop")
 		warnDlg.destroy()
-		gtk.main_quit()
+		Gtk.main_quit()
 		sys.exit(0)		
 
 	wTree.get_widget("txt_name").set_text("<big><b>" + _("Remove %s?") % package + "</b></big>")
@@ -116,13 +116,13 @@ class mintRemoveWindow:
 	wTree.get_widget("txt_guidance").set_text(_("The following packages will be removed:"))
 	
 	treeview = wTree.get_widget("tree")
-	column1 = gtk.TreeViewColumn(_("Packages to be removed"))
-	renderer = gtk.CellRendererText()
+	column1 = Gtk.TreeViewColumn(_("Packages to be removed"))
+	renderer = Gtk.CellRendererText()
 	column1.pack_start(renderer, False)
 	column1.set_attributes(renderer, text = 0)
 	treeview.append_column(column1)
 
-	model = gtk.ListStore(str)
+	model = Gtk.ListStore(str)
 	dependenciesString = commands.getoutput("apt-get -s -q remove " + package + " | grep Remv")
 	dependencies = string.split(dependenciesString, "\n")
 	for dependency in dependencies:
@@ -139,17 +139,17 @@ class mintRemoveWindow:
 
 
     def MainButtonClicked(self, widget, window_id, package, wTree):
-	wTree.get_widget("main_window").window.set_cursor(gtk.gdk.Cursor(gtk.gdk.WATCH))
+	wTree.get_widget("main_window").window.set_cursor(Gdk.Cursor.new(Gdk.CursorType.WATCH))
 	wTree.get_widget("main_window").set_sensitive(False)
 	executer = RemoveExecuter(window_id, package)
 	executer.start()
 	return True
 
     def giveUp(self, widget):
-	gtk.main_quit()
+	Gtk.main_quit()
 	sys.exit(0)
 
 if __name__ == "__main__":
     mainwin = mintRemoveWindow(sys.argv[1])
-    gtk.main()
+    Gtk.main()
     

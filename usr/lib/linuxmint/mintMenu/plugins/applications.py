@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-import gtk
-import gtk.glade
-import gobject
+from gi.repository import Gtk
+import Gtk.glade
+from gi.repository import GObject
 import os
 import mateconf
 import fnmatch
@@ -26,7 +26,7 @@ import matemenu
 
 from user import home
 
-gtk.gdk.threads_init()
+Gdk.threads_init()
 
 # i18n
 gettext.install("mintmenu", "/usr/share/linuxmint/locale")
@@ -165,27 +165,27 @@ class Menu:
 
 
 
-class SuggestionButton ( gtk.Button ):
+class SuggestionButton ( Gtk.Button ):
 
     def __init__( self, iconName, iconSize, label ):                
-        gtk.Button.__init__( self )                    
+        GObject.GObject.__init__( self )                    
         self.iconName = iconName
-        self.set_relief( gtk.RELIEF_NONE )
+        self.set_relief( Gtk.ReliefStyle.NONE )
         self.set_size_request( -1, -1 )
-        Align1 = gtk.Alignment( 0, 0.5, 1.0, 0 )
-        HBox1 = gtk.HBox()
-        labelBox = gtk.VBox( False, 2 )
-        self.image = gtk.Image()
+        Align1 = Gtk.Alignment.new( 0, 0.5, 1.0, 0 )
+        HBox1 = Gtk.HBox()
+        labelBox = Gtk.VBox( False, 2 )
+        self.image = Gtk.Image()
         self.image.set_from_stock( self.iconName, iconSize )
         self.image.show()
         HBox1.pack_start( self.image, False, False, 5 )
-        self.label = gtk.Label()
-        self.label.set_ellipsize( pango.ELLIPSIZE_END )
+        self.label = Gtk.Label()
+        self.label.set_ellipsize( Pango.EllipsizeMode.END )
         self.label.set_alignment( 0.0, 1.0 )
         self.label.show()
-        labelBox.pack_start( self.label )
+        labelBox.pack_start( self.label , True, True, 0)
         labelBox.show()
-        HBox1.pack_start( labelBox )
+        HBox1.pack_start( labelBox , True, True, 0)
         HBox1.show()
         Align1.add( HBox1 )
         Align1.show()
@@ -205,8 +205,8 @@ class pluginclass( object ):
     TARGET_TYPE_TEXT = 80
     toButton = [ ( "text/uri-list", 0, TARGET_TYPE_TEXT ) ]
     TARGET_TYPE_FAV = 81
-    toFav = [ ( "FAVORITES", gtk.TARGET_SAME_APP, TARGET_TYPE_FAV ), ( "text/plain", 0, 100 ), ( "text/uri-list", 0, 101 ) ]
-    fromFav = [ ( "FAVORITES", gtk.TARGET_SAME_APP, TARGET_TYPE_FAV ) ]
+    toFav = [ ( "FAVORITES", Gtk.TargetFlags.SAME_APP, TARGET_TYPE_FAV ), ( "text/plain", 0, 100 ), ( "text/uri-list", 0, 101 ) ]
+    fromFav = [ ( "FAVORITES", Gtk.TargetFlags.SAME_APP, TARGET_TYPE_FAV ) ]
 
     @print_timing
     def __init__( self, mintMenuWin, toggleButton, de ):
@@ -221,7 +221,7 @@ class pluginclass( object ):
         self.gladefile = os.path.join( os.path.dirname( __file__ ), "applications.glade" )
 
         # Read GLADE file
-        self.wTree = gtk.glade.XML( self.gladefile, "mainWindow" )
+        self.wTree = Gtk.glade.XML( self.gladefile, "mainWindow" )
         self.searchEntry = self.wTree.get_widget( "searchEntry" )
         self.searchButton = self.wTree.get_widget( "searchButton" )
         self.showAllAppsButton = self.wTree.get_widget( "showAllAppsButton" )
@@ -263,9 +263,9 @@ class pluginclass( object ):
         self.content_holder.connect( "key-press-event", self.keyPress )
 
         self.favoritesBox.connect( "drag_data_received", self.ReceiveCallback )
-        self.favoritesBox.drag_dest_set( gtk.DEST_DEFAULT_MOTION | gtk.DEST_DEFAULT_HIGHLIGHT | gtk.DEST_DEFAULT_DROP, self.toButton, gtk.gdk.ACTION_COPY )
+        self.favoritesBox.drag_dest_set( Gtk.DestDefaults.MOTION | Gtk.DestDefaults.HIGHLIGHT | Gtk.DestDefaults.DROP, self.toButton, Gdk.DragAction.COPY )
         self.showFavoritesButton.connect( "drag_data_received", self.ReceiveCallback )
-        self.showFavoritesButton.drag_dest_set( gtk.DEST_DEFAULT_MOTION | gtk.DEST_DEFAULT_HIGHLIGHT | gtk.DEST_DEFAULT_DROP, self.toButton, gtk.gdk.ACTION_COPY )
+        self.showFavoritesButton.drag_dest_set( Gtk.DestDefaults.MOTION | Gtk.DestDefaults.HIGHLIGHT | Gtk.DestDefaults.DROP, self.toButton, Gdk.DragAction.COPY )
 
        # self.searchButton.connect( "button_release_event", self.SearchWithButton )
 
@@ -566,7 +566,7 @@ class pluginclass( object ):
     def buildButtonList( self ):         
         if self.buildingButtonList:
             self.stopBuildingButtonList = True
-            gobject.timeout_add( 100, self.buildButtonList )
+            GObject.timeout_add( 100, self.buildButtonList )
             return
 
         self.stopBuildingButtonList = False
@@ -580,34 +580,34 @@ class pluginclass( object ):
     def StartFilter( self, widget, category ):
         # if there is a timer for a different category running stop it
         if self.filterTimer:
-            gobject.source_remove( self.filterTimer )
-        self.filterTimer = gobject.timeout_add( self.categoryhoverdelay, self.Filter, widget, category )
+            GObject.source_remove( self.filterTimer )
+        self.filterTimer = GObject.timeout_add( self.categoryhoverdelay, self.Filter, widget, category )
 
     def StopFilter( self, widget ):
         if self.filterTimer:
-            gobject.source_remove( self.filterTimer )
+            GObject.source_remove( self.filterTimer )
             self.filterTimer = None
 
     def add_search_suggestions(self, text):
         
         text = "<b>%s</b>" % text
         
-        suggestionButton = SuggestionButton(gtk.STOCK_ADD, self.iconSize, "")
+        suggestionButton = SuggestionButton(Gtk.STOCK_ADD, self.iconSize, "")
         suggestionButton.connect("clicked", self.search_google)
         suggestionButton.set_text(_("Search Google for %s") % text)
         suggestionButton.set_image("/usr/lib/linuxmint/mintMenu/search_engines/google.ico")
         self.applicationsBox.add(suggestionButton)
         self.suggestions.append(suggestionButton)
         
-        suggestionButton = SuggestionButton(gtk.STOCK_ADD, self.iconSize, "")
+        suggestionButton = SuggestionButton(Gtk.STOCK_ADD, self.iconSize, "")
         suggestionButton.connect("clicked", self.search_wikipedia)
         suggestionButton.set_text(_("Search Wikipedia for %s") % text)
         suggestionButton.set_image("/usr/lib/linuxmint/mintMenu/search_engines/wikipedia.ico")
         self.applicationsBox.add(suggestionButton)
         self.suggestions.append(suggestionButton)
                 
-        separator = gtk.EventBox()
-        separator.add(gtk.HSeparator())
+        separator = Gtk.EventBox()
+        separator.add(Gtk.HSeparator())
         separator.set_size_request(-1, 20)       
         separator.type = "separator"        
         self.mintMenuWin.SetPaneColors( [ separator ] )
@@ -615,21 +615,21 @@ class pluginclass( object ):
         self.applicationsBox.add(separator)
         self.suggestions.append(separator)        
         
-        suggestionButton = SuggestionButton(gtk.STOCK_ADD, self.iconSize, "")
+        suggestionButton = SuggestionButton(Gtk.STOCK_ADD, self.iconSize, "")
         suggestionButton.connect("clicked", self.search_dictionary)
         suggestionButton.set_text(_("Lookup %s in Dictionary") % text)
         suggestionButton.set_image("/usr/lib/linuxmint/mintMenu/search_engines/dictionary.png")
         self.applicationsBox.add(suggestionButton)
         self.suggestions.append(suggestionButton)  
         
-        suggestionButton = SuggestionButton(gtk.STOCK_FIND, self.iconSize, "")
+        suggestionButton = SuggestionButton(Gtk.STOCK_FIND, self.iconSize, "")
         suggestionButton.connect("clicked", self.Search)
         suggestionButton.set_text(_("Search Computer for %s") % text)                        
         self.applicationsBox.add(suggestionButton)
         self.suggestions.append(suggestionButton)  
         
-        #self.last_separator = gtk.EventBox()
-        #self.last_separator.add(gtk.HSeparator())
+        #self.last_separator = Gtk.EventBox()
+        #self.last_separator.add(Gtk.HSeparator())
         #self.last_separator.set_size_request(-1, 20)       
         #self.last_separator.type = "separator"   
         #self.mintMenuWin.SetPaneColors( [  self.last_separator ] )     
@@ -642,11 +642,11 @@ class pluginclass( object ):
             # Wait to see if the keyword has changed.. before doing anything
             time.sleep(0.3)
             current_keyword = keyword
-            gtk.gdk.threads_enter()
+            Gdk.threads_enter()
             try:
                 current_keyword = self.searchEntry.get_text()
             finally:
-                gtk.gdk.threads_leave()
+                Gdk.threads_leave()
             if keyword != current_keyword:
                 return            
             found_packages = []
@@ -689,11 +689,11 @@ class pluginclass( object ):
                     break
             found_packages.extend(found_in_name)
             found_packages.extend(found_elsewhere)
-            gtk.gdk.threads_enter()                                    
+            Gdk.threads_enter()                                    
             try:
                 if keyword == self.searchEntry.get_text() and len(found_packages) > 0:         
-                    last_separator = gtk.EventBox()
-                    last_separator.add(gtk.HSeparator())
+                    last_separator = Gtk.EventBox()
+                    last_separator.add(Gtk.HSeparator())
                     last_separator.set_size_request(-1, 20)       
                     last_separator.type = "separator"   
                     self.mintMenuWin.SetPaneColors( [  last_separator ] )     
@@ -705,7 +705,7 @@ class pluginclass( object ):
                         for word in keywords: 
                             if word != "":             
                                 name = name.replace(word, "<b>%s</b>" % word);
-                        suggestionButton = SuggestionButton(gtk.STOCK_ADD, self.iconSize, "")
+                        suggestionButton = SuggestionButton(Gtk.STOCK_ADD, self.iconSize, "")
                         suggestionButton.connect("clicked", self.apturl_install, pkg.name)
                         suggestionButton.set_text(_("Install package '%s'") % name)
                         suggestionButton.set_tooltip_text("%s\n\n%s\n\n%s" % (pkg.name, pkg.summary, pkg.description))
@@ -715,15 +715,15 @@ class pluginclass( object ):
                         #if cache != self.current_results:
                         #    self.current_results.append(pkg)
             finally:        
-                gtk.gdk.threads_leave()            
+                Gdk.threads_leave()            
                         
             #if len(found_packages) == 0:
-            #    gtk.gdk.threads_enter()
+            #    Gdk.threads_enter()
             #    try:
             #        self.applicationsBox.remove(self.last_separator)
             #        self.suggestions.remove(self.last_separator)
             #    finally:
-            #        gtk.gdk.threads_leave()           
+            #        Gdk.threads_leave()           
                 
         except Exception, detail:
             print detail           
@@ -746,8 +746,8 @@ class pluginclass( object ):
                         found_packages.append(pkg)                     
                                                            
             if len(found_packages) > 0:         
-                    last_separator = gtk.EventBox()
-                    last_separator.add(gtk.HSeparator())
+                    last_separator = Gtk.EventBox()
+                    last_separator.add(Gtk.HSeparator())
                     last_separator.set_size_request(-1, 20)       
                     last_separator.type = "separator"   
                     self.mintMenuWin.SetPaneColors( [  last_separator ] )     
@@ -760,7 +760,7 @@ class pluginclass( object ):
                 for word in keywords:
                     if word != "":                    
                         name = name.replace(word, "<b>%s</b>" % word);
-                suggestionButton = SuggestionButton(gtk.STOCK_ADD, self.iconSize, "")
+                suggestionButton = SuggestionButton(Gtk.STOCK_ADD, self.iconSize, "")
                 suggestionButton.connect("clicked", self.apturl_install, pkg.name)
                 suggestionButton.set_text(_("Install package '%s'") % name)
                 suggestionButton.set_tooltip_text("%s\n\n%s\n\n%s" % (pkg.name, pkg.summary.capitalize(), pkg.description))
@@ -818,10 +818,10 @@ class pluginclass( object ):
                     self.current_results = []
 
                 for i in self.categoriesBox.get_children():
-                    i.set_relief( gtk.RELIEF_NONE )
+                    i.set_relief( Gtk.ReliefStyle.NONE )
 
                 allButton = self.categoriesBox.get_children()[0];
-                allButton.set_relief( gtk.RELIEF_HALF )
+                allButton.set_relief( Gtk.ReliefStyle.HALF )
                 self.activeFilter = (0, text)
         else:
             #print "CATFILTER"
@@ -839,8 +839,8 @@ class pluginclass( object ):
                     i.filterCategory( category )
 
             for i in self.categoriesBox.get_children():
-                i.set_relief( gtk.RELIEF_NONE )
-            widget.set_relief( gtk.RELIEF_HALF )
+                i.set_relief( Gtk.ReliefStyle.NONE )
+            widget.set_relief( Gtk.ReliefStyle.HALF )
             widget.grab_focus()
 
             self.searchEntry.set_text( "" )
@@ -849,11 +849,11 @@ class pluginclass( object ):
         
     # Forward all text to the search box
     def keyPress( self, widget, event ):
-        if event.string.strip() != "" or event.keyval == gtk.keysyms.BackSpace:
+        if event.string.strip() != "" or event.keyval == Gdk.KEY_BackSpace:
             self.searchEntry.event( event )
             return True
 
-        if event.keyval == gtk.keysyms.Down and self.searchEntry.is_focus():
+        if event.keyval == Gdk.KEY_Down and self.searchEntry.is_focus():
             self.applicationsBox.get_children()[0].grab_focus()
 
         return False
@@ -866,21 +866,21 @@ class pluginclass( object ):
                 insertBefore = True
 
             if widget.type == "location":
-                mTree = gtk.glade.XML( self.gladefile, "favoritesMenu" )
+                mTree = Gtk.glade.XML( self.gladefile, "favoritesMenu" )
                 #i18n
 
-                desktopMenuItem = gtk.MenuItem(_("Add to desktop"))
-                panelMenuItem = gtk.MenuItem(_("Add to panel"))
-                separator1 = gtk.SeparatorMenuItem()
-                insertSpaceMenuItem = gtk.MenuItem(_("Insert space"))
-                insertSeparatorMenuItem = gtk.MenuItem(_("Insert separator"))
-                separator2 = gtk.SeparatorMenuItem()
-                startupMenuItem = gtk.CheckMenuItem(_("Launch when I log in"))
-                separator3 = gtk.SeparatorMenuItem()
-                launchMenuItem = gtk.MenuItem(_("Launch"))
-                removeFromFavMenuItem = gtk.MenuItem(_("Remove from favorites"))
-                separator4 = gtk.SeparatorMenuItem()
-                propsMenuItem = gtk.MenuItem(_("Edit properties"))
+                desktopMenuItem = Gtk.MenuItem(_("Add to desktop"))
+                panelMenuItem = Gtk.MenuItem(_("Add to panel"))
+                separator1 = Gtk.SeparatorMenuItem()
+                insertSpaceMenuItem = Gtk.MenuItem(_("Insert space"))
+                insertSeparatorMenuItem = Gtk.MenuItem(_("Insert separator"))
+                separator2 = Gtk.SeparatorMenuItem()
+                startupMenuItem = Gtk.CheckMenuItem(_("Launch when I log in"))
+                separator3 = Gtk.SeparatorMenuItem()
+                launchMenuItem = Gtk.MenuItem(_("Launch"))
+                removeFromFavMenuItem = Gtk.MenuItem(_("Remove from favorites"))
+                separator4 = Gtk.SeparatorMenuItem()
+                propsMenuItem = Gtk.MenuItem(_("Edit properties"))
 
                 desktopMenuItem.connect("activate", self.add_to_desktop, widget)
                 panelMenuItem.connect("activate", self.add_to_panel, widget)
@@ -916,11 +916,11 @@ class pluginclass( object ):
                 self.mintMenuWin.grab()
 
             else:
-                mTree = gtk.glade.XML( self.gladefile, "favoritesMenuExtra" )
+                mTree = Gtk.glade.XML( self.gladefile, "favoritesMenuExtra" )
                 #i18n
-                removeMenuItem = gtk.MenuItem(_("Remove"))
-                insertSpaceMenuItem = gtk.MenuItem(_("Insert space"))
-                insertSeparatorMenuItem = gtk.MenuItem(_("Insert separator"))
+                removeMenuItem = Gtk.MenuItem(_("Remove"))
+                insertSpaceMenuItem = Gtk.MenuItem(_("Insert space"))
+                insertSeparatorMenuItem = Gtk.MenuItem(_("Insert separator"))
                 mTree.get_widget("favoritesMenuExtra").append(removeMenuItem)
                 mTree.get_widget("favoritesMenuExtra").append(insertSpaceMenuItem)
                 mTree.get_widget("favoritesMenuExtra").append(insertSeparatorMenuItem)
@@ -934,20 +934,20 @@ class pluginclass( object ):
 
     def menuPopup( self, widget, event ):
         if event.button == 3:
-            mTree = gtk.glade.XML( self.gladefile, "applicationsMenu" )
+            mTree = Gtk.glade.XML( self.gladefile, "applicationsMenu" )
 
             #i18n
-            desktopMenuItem = gtk.MenuItem(_("Add to desktop"))
-            panelMenuItem = gtk.MenuItem(_("Add to panel"))
-            separator1 = gtk.SeparatorMenuItem()
-            favoriteMenuItem = gtk.CheckMenuItem(_("Show in my favorites"))
-            startupMenuItem = gtk.CheckMenuItem(_("Launch when I log in"))
-            separator2 = gtk.SeparatorMenuItem()
-            launchMenuItem = gtk.MenuItem(_("Launch"))
-            uninstallMenuItem = gtk.MenuItem(_("Uninstall"))
-            deleteMenuItem = gtk.MenuItem(_("Delete from menu"))
-            separator3 = gtk.SeparatorMenuItem()
-            propsMenuItem = gtk.MenuItem(_("Edit properties"))
+            desktopMenuItem = Gtk.MenuItem(_("Add to desktop"))
+            panelMenuItem = Gtk.MenuItem(_("Add to panel"))
+            separator1 = Gtk.SeparatorMenuItem()
+            favoriteMenuItem = Gtk.CheckMenuItem(_("Show in my favorites"))
+            startupMenuItem = Gtk.CheckMenuItem(_("Launch when I log in"))
+            separator2 = Gtk.SeparatorMenuItem()
+            launchMenuItem = Gtk.MenuItem(_("Launch"))
+            uninstallMenuItem = Gtk.MenuItem(_("Uninstall"))
+            deleteMenuItem = Gtk.MenuItem(_("Delete from menu"))
+            separator3 = Gtk.SeparatorMenuItem()
+            propsMenuItem = Gtk.MenuItem(_("Edit properties"))
 
             if self.de == "mate":
                 mTree.get_widget("applicationsMenu").append(desktopMenuItem)
@@ -999,72 +999,72 @@ class pluginclass( object ):
         self.mintMenuWin.grab()
     
     def searchPopup( self, widget=None, event=None ):    
-        menu = gtk.Menu()   
+        menu = Gtk.Menu()   
              
-        menuItem = gtk.ImageMenuItem(_("Search Google"))
-        img = gtk.Image()
+        menuItem = Gtk.ImageMenuItem(_("Search Google"))
+        img = Gtk.Image()
         img.set_from_file('/usr/lib/linuxmint/mintMenu/search_engines/google.ico')
         menuItem.set_image(img)
         menuItem.connect("activate", self.search_google)
         menu.append(menuItem)
         
-        menuItem = gtk.ImageMenuItem(_("Search Wikipedia"))
-        img = gtk.Image()
+        menuItem = Gtk.ImageMenuItem(_("Search Wikipedia"))
+        img = Gtk.Image()
         img.set_from_file('/usr/lib/linuxmint/mintMenu/search_engines/wikipedia.ico')
         menuItem.set_image(img)
         menuItem.connect("activate", self.search_wikipedia)
         menu.append(menuItem)
         
-        menuItem = gtk.SeparatorMenuItem()
+        menuItem = Gtk.SeparatorMenuItem()
         menu.append(menuItem)
         
-        menuItem = gtk.ImageMenuItem(_("Lookup Dictionary"))
-        img = gtk.Image()
+        menuItem = Gtk.ImageMenuItem(_("Lookup Dictionary"))
+        img = Gtk.Image()
         img.set_from_file('/usr/lib/linuxmint/mintMenu/search_engines/dictionary.png')
         menuItem.set_image(img)
         menuItem.connect("activate", self.search_dictionary)
         menu.append(menuItem)
         
-        menuItem = gtk.ImageMenuItem(_("Search Computer"))
-        img = gtk.Image()
-        img.set_from_stock(gtk.STOCK_FIND, self.iconSize)
+        menuItem = Gtk.ImageMenuItem(_("Search Computer"))
+        img = Gtk.Image()
+        img.set_from_stock(Gtk.STOCK_FIND, self.iconSize)
         menuItem.set_image(img)
         menuItem.connect("activate", self.Search)
         menu.append(menuItem)
         
-        menuItem = gtk.SeparatorMenuItem()
+        menuItem = Gtk.SeparatorMenuItem()
         menu.append(menuItem)
         
-        menuItem = gtk.ImageMenuItem(_("Find Software"))
-        img = gtk.Image()
+        menuItem = Gtk.ImageMenuItem(_("Find Software"))
+        img = Gtk.Image()
         img.set_from_file('/usr/lib/linuxmint/mintMenu/search_engines/software.png')
         menuItem.set_image(img)
         menuItem.connect("activate", self.search_mint_software)
         menu.append(menuItem)
         
-        menuItem = gtk.ImageMenuItem(_("Find Tutorials"))
-        img = gtk.Image()
+        menuItem = Gtk.ImageMenuItem(_("Find Tutorials"))
+        img = Gtk.Image()
         img.set_from_file('/usr/lib/linuxmint/mintMenu/search_engines/tutorials.png')
         menuItem.set_image(img)
         menuItem.connect("activate", self.search_mint_tutorials)
         menu.append(menuItem)
         
-        menuItem = gtk.ImageMenuItem(_("Find Hardware"))
-        img = gtk.Image()
+        menuItem = Gtk.ImageMenuItem(_("Find Hardware"))
+        img = Gtk.Image()
         img.set_from_file('/usr/lib/linuxmint/mintMenu/search_engines/hardware.png')
         menuItem.set_image(img)
         menuItem.connect("activate", self.search_mint_hardware)
         menu.append(menuItem)
         
-        menuItem = gtk.ImageMenuItem(_("Find Ideas"))
-        img = gtk.Image()
+        menuItem = Gtk.ImageMenuItem(_("Find Ideas"))
+        img = Gtk.Image()
         img.set_from_file('/usr/lib/linuxmint/mintMenu/search_engines/ideas.png')
         menuItem.set_image(img)
         menuItem.connect("activate", self.search_mint_ideas)
         menu.append(menuItem)
         
-        menuItem = gtk.ImageMenuItem(_("Find Users"))
-        img = gtk.Image()
+        menuItem = Gtk.ImageMenuItem(_("Find Users"))
+        img = Gtk.Image()
         img.set_from_file('/usr/lib/linuxmint/mintMenu/search_engines/users.png')
         menuItem.set_image(img)
         menuItem.connect("activate", self.search_mint_users)
@@ -1224,7 +1224,7 @@ class pluginclass( object ):
                 filePath = widget.desktopFile
 
         self.mintMenuWin.hide()
-        gtk.gdk.flush()
+        Gdk.flush()
 
         editProcess = subprocess.Popen(["/usr/bin/mate-desktop-item-edit", filePath])
         subprocess.Popen.communicate(editProcess)
@@ -1304,7 +1304,7 @@ class pluginclass( object ):
     # Scroll button into view
     def scrollItemIntoView( self, widget, event = None ):
         viewport = widget.parent
-        while not isinstance( viewport, gtk.Viewport ):
+        while not isinstance( viewport, Gtk.Viewport ):
             if not viewport.parent:
                 return
             viewport = viewport.parent
@@ -1312,7 +1312,7 @@ class pluginclass( object ):
         viewport.get_vadjustment().clamp_page(aloc.y, aloc.y + aloc.height)
 
     def favoritesBuildSpace( self ):
-        space = gtk.EventBox()
+        space = Gtk.EventBox()
         space.set_size_request( -1, 20 )
         space.connect( "button_release_event", self.favPopup )
         space.type = "space"
@@ -1323,8 +1323,8 @@ class pluginclass( object ):
         return space
 
     def favoritesBuildSeparator( self ):
-        separator = gtk.HSeparator()
-        #separator.add( gtk.HSeparator() )
+        separator = Gtk.HSeparator()
+        #separator.add( Gtk.HSeparator() )
         separator.set_size_request( -1, 20 )
         separator.connect( "button_release_event", self.favPopup )
         separator.type = "separator"
@@ -1417,9 +1417,9 @@ class pluginclass( object ):
                     self.favorites.append( favButton )
                     self.favoritesPositionOnGrid( favButton )
                     favButton.connect( "drag_data_received", self.onFavButtonDragReorder )
-                    favButton.drag_dest_set( gtk.DEST_DEFAULT_MOTION | gtk.DEST_DEFAULT_HIGHLIGHT | gtk.DEST_DEFAULT_DROP, self.fromFav, gtk.gdk.ACTION_COPY )
+                    favButton.drag_dest_set( Gtk.DestDefaults.MOTION | Gtk.DestDefaults.HIGHLIGHT | Gtk.DestDefaults.DROP, self.fromFav, Gdk.DragAction.COPY )
                     favButton.connect( "drag_data_get", self.onFavButtonDragReorderGet )
-                    favButton.drag_source_set( gtk.gdk.BUTTON1_MASK, self.toFav, gtk.gdk.ACTION_COPY )
+                    favButton.drag_source_set( Gdk.ModifierType.BUTTON1_MASK, self.toFav, Gdk.DragAction.COPY )
                     position += 1
 
             self.favoritesSave()
@@ -1498,9 +1498,9 @@ class pluginclass( object ):
             self.favoritesPositionOnGrid( favButton )
 
             favButton.connect( "drag_data_received", self.onFavButtonDragReorder )
-            favButton.drag_dest_set( gtk.DEST_DEFAULT_MOTION | gtk.DEST_DEFAULT_HIGHLIGHT | gtk.DEST_DEFAULT_DROP, self.toFav, gtk.gdk.ACTION_COPY )
+            favButton.drag_dest_set( Gtk.DestDefaults.MOTION | Gtk.DestDefaults.HIGHLIGHT | Gtk.DestDefaults.DROP, self.toFav, Gdk.DragAction.COPY )
             favButton.connect( "drag_data_get", self.onFavButtonDragReorderGet )
-            favButton.drag_source_set( gtk.gdk.BUTTON1_MASK, self.toFav, gtk.gdk.ACTION_COPY )
+            favButton.drag_source_set( Gdk.ModifierType.BUTTON1_MASK, self.toFav, Gdk.DragAction.COPY )
 
             if position >= 0:
                 self.favoritesReorder( favButton.position, position )
@@ -1537,7 +1537,7 @@ class pluginclass( object ):
 
             appListFile.close( )
         except Exception, e:
-            msgDlg = gtk.MessageDialog( None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, _("Couldn't save favorites. Check if you have write access to ~/.linuxmint/mintMenu")+"\n(" + e.__str__() + ")" )
+            msgDlg = Gtk.MessageDialog( None, Gtk.DialogFlags.MODAL, Gtk.MessageType.ERROR, Gtk.ButtonsType.OK, _("Couldn't save favorites. Check if you have write access to ~/.linuxmint/mintMenu")+"\n(" + e.__str__() + ")" )
             msgDlg.run();
             msgDlg.destroy();
 
@@ -1559,9 +1559,9 @@ class pluginclass( object ):
     def menuChanged( self, x, y ):
         # wait some miliseconds because there a multiple events send at the same time and we don't want to rebuild the menu for each
         if self.menuChangedTimer:
-            gobject.source_remove( self.menuChangedTimer )
+            GObject.source_remove( self.menuChangedTimer )
 
-        self.menuChangedTimer = gobject.timeout_add( 100, self.updateBoxes, True )
+        self.menuChangedTimer = GObject.timeout_add( 100, self.updateBoxes, True )
 
     def updateBoxes( self, menu_has_changed ):        
         # FIXME: This is really bad!

@@ -3,13 +3,13 @@
 import sys
 
 try:
-    import pygtk
-    pygtk.require( "2.0" )
+    import gi
+    pyGtk.require( "2.0" )
 except:
     pass
 try:
-    import gtk
-    import gtk.glade
+    from gi.repository import Gtk
+    import Gtk.glade
     import gettext
     import os
     import commands
@@ -35,7 +35,7 @@ class mintMenuConfig( object ):
 
         # Load glade file and extract widgets
         gladefile = os.path.join( self.path, "mintMenuConfig.glade" )
-        wTree     = gtk.glade.XML( gladefile, "mainWindow" )
+        wTree     = Gtk.glade.XML( gladefile, "mainWindow" )
         self.mainWindow=wTree.get_widget("mainWindow")
 
         #i18n
@@ -146,7 +146,7 @@ class mintMenuConfig( object ):
         self.hotkeyText = wTree.get_widget( "hotkeyText" )
         self.buttonIcon = wTree.get_widget( "buttonIcon" )
         self.buttonIconChooser = wTree.get_widget( "button_icon_chooser" )
-        self.image_filter = gtk.FileFilter()
+        self.image_filter = Gtk.FileFilter()
         self.image_filter.set_name(_("Images"))
         self.image_filter.add_pattern("*.png")
         self.image_filter.add_pattern("*.jpg")
@@ -188,7 +188,7 @@ class mintMenuConfig( object ):
         else:
             wTree.get_widget( "softwaremanagercheckbutton" ).hide()
 
-        wTree.get_widget( "closeButton" ).connect("clicked", gtk.main_quit )
+        wTree.get_widget( "closeButton" ).connect("clicked", Gtk.main_quit )
 
 
         self.gconf = EasyGConf( "/apps/mintMenu/" )
@@ -254,8 +254,8 @@ class mintMenuConfig( object ):
         self.customplacepaths = self.gconfPlaces.get( "list-string", "custom_paths", [ ] )
         self.customplacenames = self.gconfPlaces.get( "list-string", "custom_names", [ ] )
 
-        self.customplacestreemodel = gtk.ListStore( str, str)
-        self.cell = gtk.CellRendererText()
+        self.customplacestreemodel = Gtk.ListStore( str, str)
+        self.cell = Gtk.CellRendererText()
 
         for count in range( len(self.customplacepaths) ):
             self.customplacestreemodel.append( [ self.customplacenames[count], self.customplacepaths[count] ] )
@@ -264,8 +264,8 @@ class mintMenuConfig( object ):
         self.customplacestreemodel.connect("row-deleted", self.updatePlacesGconf)
         self.customplacestreemodel.connect("rows-reordered", self.updatePlacesGconf)
         self.customplacestree.set_model( self.customplacestreemodel )
-        self.namescolumn = gtk.TreeViewColumn( _("Name"), self.cell, text = 0 )
-        self.placescolumn = gtk.TreeViewColumn( _("Path"), self.cell, text = 1 )
+        self.namescolumn = Gtk.TreeViewColumn( _("Name"), self.cell, text = 0 )
+        self.placescolumn = Gtk.TreeViewColumn( _("Path"), self.cell, text = 1 )
         self.customplacestree.append_column( self.namescolumn )
         self.customplacestree.append_column( self.placescolumn )
         wTree.get_widget("newButton").connect("clicked", self.newPlace)
@@ -278,7 +278,7 @@ class mintMenuConfig( object ):
         theme_name = commands.getoutput("mateconftool-2 --get /apps/mintMenu/theme_name").strip()
         themes = commands.getoutput("find /usr/share/themes -name gtkrc")
         themes = themes.split("\n")
-        model = gtk.ListStore(str, str)
+        model = Gtk.ListStore(str, str)
         wTree.get_widget("themesCombo").set_model(model)
         selected_theme = model.append([_("Desktop theme"), "default"])
         for theme in themes:
@@ -356,7 +356,7 @@ class mintMenuConfig( object ):
 
         gconf.notifyAdd( gconfPath, self.callSetter, args = [ gconfType, setter ] )
         if gconfType == "color":
-            setter( gtk.gdk.color_parse( gconf.get( gconfType, gconfPath ) ) )
+            setter( Gdk.color_parse( gconf.get( gconfType, gconfPath ) ) )
         else:
             setter( gconf.get( gconfType, gconfPath ) )
 
@@ -368,7 +368,7 @@ class mintMenuConfig( object ):
         elif args[0] == "int":
             args[1]( entry.get_value().get_int() )
         elif args[0] == "color":
-            args[1]( gtk.gdk.color_parse( entry.get_value().get_string() ) )
+            args[1]( Gdk.color_parse( entry.get_value().get_string() ) )
 
     def callGetter( self, gconf, gconfType, gconfPath, getter ):
         if (gconfType == "int"):
@@ -417,17 +417,17 @@ class mintMenuConfig( object ):
 
     def newPlace(self, newButton):
         gladefile = os.path.join( self.path, "mintMenuConfig.glade" )
-        wTree = gtk.glade.XML( gladefile, "editPlaceDialog" )
+        wTree = Gtk.glade.XML( gladefile, "editPlaceDialog" )
         wTree.get_widget("label2").set_text(_("Name:"))
         wTree.get_widget("label1").set_text(_("Path:"))
-        folderChooserTree = gtk.glade.XML( gladefile, "fileChooserDialog" )
+        folderChooserTree = Gtk.glade.XML( gladefile, "fileChooserDialog" )
         newPlaceDialog = wTree.get_widget( "editPlaceDialog" )
         folderChooserDialog = folderChooserTree.get_widget( "fileChooserDialog" )
         newPlaceDialog.set_transient_for(self.mainWindow)
         newPlaceDialog.set_icon_from_file("/usr/lib/linuxmint/mintMenu/icon.svg")
         newPlaceDialog.set_title(self.newPlaceDialogTitle)
         folderChooserDialog.set_title(self.folderChooserDialogTitle)
-        newPlaceDialog.set_default_response(gtk.RESPONSE_OK)
+        newPlaceDialog.set_default_response(Gtk.ResponseType.OK)
         newPlaceName = wTree.get_widget( "nameEntryBox" )
         newPlacePath = wTree.get_widget( "pathEntryBox" )
         folderButton = wTree.get_widget( "folderButton" )
@@ -437,13 +437,13 @@ class mintMenuConfig( object ):
                 folderChooserDialog.select_filename(currentPath)
             response = folderChooserDialog.run()
             folderChooserDialog.hide()
-            if (response == gtk.RESPONSE_OK):
+            if (response == Gtk.ResponseType.OK):
                 newPlacePath.set_text( folderChooserDialog.get_filenames()[0] )
         folderButton.connect("clicked", chooseFolder)
 
         response = newPlaceDialog.run()
         newPlaceDialog.hide()
-        if (response == gtk.RESPONSE_OK ):
+        if (response == Gtk.ResponseType.OK ):
             name = newPlaceName.get_text()
             path = newPlacePath.get_text()
             if (name != "" and path !=""):
@@ -451,17 +451,17 @@ class mintMenuConfig( object ):
 
     def editPlace(self, editButton):
         gladefile = os.path.join( self.path, "mintMenuConfig.glade" )
-        wTree = gtk.glade.XML( gladefile, "editPlaceDialog" )
+        wTree = Gtk.glade.XML( gladefile, "editPlaceDialog" )
         wTree.get_widget("label2").set_text(_("Name:"))
         wTree.get_widget("label1").set_text(_("Path:"))
-        folderChooserTree = gtk.glade.XML( gladefile, "fileChooserDialog" )
+        folderChooserTree = Gtk.glade.XML( gladefile, "fileChooserDialog" )
         editPlaceDialog = wTree.get_widget( "editPlaceDialog" )
         folderChooserDialog = folderChooserTree.get_widget( "fileChooserDialog" )
         editPlaceDialog.set_transient_for(self.mainWindow)
         editPlaceDialog.set_icon_from_file("/usr/lib/linuxmint/mintMenu/icon.svg")
         editPlaceDialog.set_title(self.editPlaceDialogTitle)
         folderChooserDialog.set_title(self.folderChooserDialogTitle)
-        editPlaceDialog.set_default_response(gtk.RESPONSE_OK)
+        editPlaceDialog.set_default_response(Gtk.ResponseType.OK)
         editPlaceName = wTree.get_widget( "nameEntryBox" )
         editPlacePath = wTree.get_widget( "pathEntryBox" )
         folderButton = wTree.get_widget( "folderButton" )
@@ -481,12 +481,12 @@ class mintMenuConfig( object ):
                     folderChooserDialog.select_filename(currentPath)
                 response = folderChooserDialog.run()
                 folderChooserDialog.hide()
-                if (response == gtk.RESPONSE_OK):
+                if (response == Gtk.ResponseType.OK):
                     editPlacePath.set_text( folderChooserDialog.get_filenames()[0] )
             folderButton.connect("clicked", chooseFolder)
             response = editPlaceDialog.run()
             editPlaceDialog.hide()
-            if (response == gtk.RESPONSE_OK):
+            if (response == Gtk.ResponseType.OK):
                 name = editPlaceName.get_text()
                 path = editPlacePath.get_text()
                 if (name != "" and path != ""):
@@ -543,4 +543,4 @@ class mintMenuConfig( object ):
 
 
 window = mintMenuConfig()
-gtk.main()
+Gtk.main()

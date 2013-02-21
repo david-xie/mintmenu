@@ -1,12 +1,12 @@
-import gtk
-import gtk.glade
+from gi.repository import Gtk
+import Gtk.glade
 import sys
 import os
-import gobject
+from gi.repository import GObject
 import datetime
 import mateconf
 import fcntl
-import pango
+from gi.repository import Pango
 from execute import Execute
 from easygconf import *
 from easyfiles import *
@@ -28,7 +28,7 @@ class pluginclass:
         self.gladefile = os.path.join( os.path.dirname( __file__ ), "recent.glade" )
 
         #Read GLADE file
-        self.wTree = gtk.glade.XML( self.gladefile, "window1" )
+        self.wTree = Gtk.glade.XML( self.gladefile, "window1" )
 
         #Set 'window' property for the plugin (Must be the root widget)
         self.window = self.wTree.get_widget( "window1" )
@@ -54,7 +54,7 @@ class pluginclass:
         self.client.notify_add( '/apps/mintMenu/plugins/recent/recent_font_size', self.RegenPlugin )
 
         self.FileList=[]
-        self.RecManagerInstance = gtk.recent_manager_get_default()
+        self.RecManagerInstance = Gtk.recent_manager_get_default()
         self.RecManagerInstance.connect("changed",self.DoRecent)
 
 
@@ -128,27 +128,27 @@ class pluginclass:
     def AddRecentBtn( self, Name, RecentImage ):
         DispName=os.path.basename( Name )
 
-        AButton = gtk.Button( "", "ok", True )
+        AButton = Gtk.Button( "", "ok", True )
         AButton.remove( AButton.get_children()[0] )
         AButton.set_size_request( 200, -1 )
-        AButton.set_relief( gtk.RELIEF_NONE )
+        AButton.set_relief( Gtk.ReliefStyle.NONE )
         AButton.connect( "clicked", self.callback, Name )
 
-        Align1 = gtk.Alignment( 0, 0.5, 0, 0 )
+        Align1 = Gtk.Alignment.new( 0, 0.5, 0, 0 )
         Align1.set_padding( 0, 0, 0, 0 )
-        HBox1 = gtk.HBox( False, 5 )
-        VBox1 = gtk.VBox( False, 2 )
+        HBox1 = Gtk.HBox( False, 5 )
+        VBox1 = Gtk.VBox( False, 2 )
 
         VBox1.show()
 
 
-        Label1 = gtk.Label( DispName )
+        Label1 = Gtk.Label(label= DispName )
         Label1.set_size_request( AButton.size_request()[0]-20, -1 )
-        Label1.set_ellipsize( pango.ELLIPSIZE_END )
+        Label1.set_ellipsize( Pango.EllipsizeMode.END )
         Label1.show()
         VBox1.add( Label1 )
 
-        ButtonIcon = gtk.Image()
+        ButtonIcon = Gtk.Image()
         ButtonIcon.set_from_pixbuf(RecentImage)
         HBox1.add( ButtonIcon )
 
@@ -167,11 +167,11 @@ class pluginclass:
 
         x = os.system("mate-open \""+filename+"\"")
         if x == 256:
-            dia = gtk.Dialog('File not found!',
+            dia = Gtk.Dialog('File not found!',
                              None,  #the toplevel wgt of your app
-                             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,  #binary flags or'ed together
+                             Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,  #binary flags or'ed together
                              ("Ok", 77))
-            dia.vbox.pack_start(gtk.Label('The location or file could not be found!'))
+            dia.vbox.pack_start(Gtk.Label('The location or file could not be found!', True, True, 0))
             dia.vbox.show_all()
             dia.show()
             result = dia.run()
@@ -184,14 +184,14 @@ class pluginclass:
         FileString=[]
         IconString=[]
         RecentInfo=self.RecManagerInstance.get_items()
-        # print RecentInfo[0].get_icon(gtk.ICON_SIZE_MENU)
+        # print RecentInfo[0].get_icon(Gtk.IconSize.MENU)
         count=0
         MaxEntries=self.numentries
         if self.numentries == -1:
             MaxEntries=len(RecentInfo)
         for items in RecentInfo:
             FileString.append(items.get_uri_display())
-            IconString.append(items.get_icon(gtk.ICON_SIZE_MENU))
+            IconString.append(items.get_icon(Gtk.IconSize.MENU))
             count+=1
             if count >= MaxEntries:
                 break

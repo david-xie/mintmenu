@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-import gtk
-import gtk.glade
+from gi.repository import Gtk
+import Gtk.glade
 import os
 import string
 import gettext
@@ -27,7 +27,7 @@ class pluginclass( object ):
 
         # Read GLADE file
         gladefile = os.path.join( os.path.dirname( __file__ ), "places.glade" )
-        wTree   = gtk.glade.XML( gladefile, "mainWindow" )
+        wTree   = Gtk.glade.XML( gladefile, "mainWindow" )
         self.placesBtnHolder    = wTree.get_widget( "places_button_holder" )
         self.editableBtnHolder  = wTree.get_widget( "editable_button_holder" )
         self.scrolledWindow=wTree.get_widget("scrolledwindow2")
@@ -80,9 +80,9 @@ class pluginclass( object ):
         elif entry.get_key() == self.gconf.gconfDir+"height":
             if (self.allowScrollbar == False):
                 self.height = -1
-                self.scrolledWindow.set_policy( gtk.POLICY_AUTOMATIC, gtk.POLICY_NEVER )
+                self.scrolledWindow.set_policy( Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER )
             else:
-                self.scrolledWindow.set_policy( gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC )
+                self.scrolledWindow.set_policy( Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC )
                 self.height = entry.get_value().get_int()
 
         self.content_holder.set_size_request( self.width, self.height )
@@ -101,12 +101,12 @@ class pluginclass( object ):
         self.width = self.gconf.get( "int", "width", 200 )
         self.allowScrollbar = self.gconf.get( "bool", "allowScrollbar", False)
         self.showGTKBookmarks = self.gconf.get( "bool", "show_gtk_bookmarks", False)
-        self.scrolledWindow.set_policy( gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC )
+        self.scrolledWindow.set_policy( Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC )
         self.height = self.gconf.get( "int", "height", 180 )
         self.content_holder.set_size_request( self.width, self.height )
         if (self.allowScrollbar == False):
             self.height = -1
-            self.scrolledWindow.set_policy( gtk.POLICY_AUTOMATIC, gtk.POLICY_NEVER )
+            self.scrolledWindow.set_policy( Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER )
         self.content_holder.set_size_request( self.width, self.height )
         self.execapp = self.gconf.get( "string", "execute_app", "nautilus" )
         self.iconsize = self.gconf.get( "int","icon_size", 16 )
@@ -260,8 +260,8 @@ class pluginclass( object ):
 
     def trashPopup( self, widget, event ):
         if event.button == 3:
-            trashMenu = gtk.Menu()
-            emptyTrashMenuItem = gtk.MenuItem(_("Empty trash"))
+            trashMenu = Gtk.Menu()
+            emptyTrashMenuItem = Gtk.MenuItem(_("Empty trash"))
             trashMenu.append(emptyTrashMenuItem)
             trashMenu.show_all()
             emptyTrashMenuItem.connect ( "activate", self.emptyTrash, widget )
