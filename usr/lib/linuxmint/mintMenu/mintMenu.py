@@ -80,7 +80,8 @@ class MainWindow( object ):
         self.toggle = toggleButton
         # Load glade file and extract widgets
         gladefile       = os.path.join( self.path, "mintMenu.glade" )
-        wTree           = Gtk.glade.XML( gladefile, "mainWindow" )
+        builder = Gtk.Builder()
+        wTree           = builder.add_from_file(gladefile)
         self.window     = wTree.get_widget( "mainWindow" )
         self.paneholder = wTree.get_widget( "paneholder" )        
         self.border     = wTree.get_widget( "border" )
