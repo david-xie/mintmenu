@@ -1,24 +1,27 @@
 #!/usr/bin/env python
+import gi
+gi.require_version("Gtk", "2.0")
 
 try:
-    import sys
-    from gi.repository import Gtk
-    import Gtk.glade
-    from gi.repository import Pango
     import os
+    import sys
     import commands
-    from gi.repository import MatePanelApplet
     import gettext
     import matevfs
     import traceback
     import time
     import gc
     import xdg.Config
-    import gi
-    pyGtk.require( "2.0" )
+    from gi.repository import Gtk
+    from gi.repository import Pango
+    from gi.repository import MatePanelApplet
 except Exception, e:
     print e
     sys.exit( 1 )
+
+from easybuttons import iconManager
+from easygconf import EasyGConf
+from execute import *
 
 global mbindkey
 # Load the key binding lib (developped by deskbar-applet, copied into mintMenu so we don't end up with an unnecessary dependency)
@@ -51,6 +54,7 @@ NAME = _("Menu")
 PATH = os.path.abspath( os.path.dirname( sys.argv[0] ) )
 
 ICON = "/usr/lib/linuxmint/mintMenu/visualisation-logo.png"
+MINT_MENU_GLADE = "/usr/lib/linuxmint/mintMenu/mintMenu.glade"
 
 sys.path.append( os.path.join( PATH , "plugins") )
 
@@ -59,10 +63,15 @@ if not windowManager:
     windowManager = "MATE"
 xdg.Config.setWindowManager( windowManager.upper() )
 
-from easybuttons import iconManager
-from easygconf import EasyGConf
-from execute import *
 
+class Handler(object):
+    def __init__(self):
+        #self.builder = builder
+        #self.window_id = window_id
+        #self.package = package
+
+    def on_cancel_button_clicked(self, *args):
+        Gtk.main_quit()
 
 
 class MainWindow( object ):
@@ -79,12 +88,11 @@ class MainWindow( object ):
 
         self.toggle = toggleButton
         # Load glade file and extract widgets
-        gladefile       = os.path.join( self.path, "mintMenu.glade" )
-        builder = Gtk.Builder()
-        wTree           = builder.add_from_file(gladefile)
-        self.window     = wTree.get_widget( "mainWindow" )
-        self.paneholder = wTree.get_widget( "paneholder" )        
-        self.border     = wTree.get_widget( "border" )
+        self.builder = Gtk.Builder()
+        self.builder.add_from_file(MINT_REMOVE_GLADE)
+        self.window     = self.builder.get_object( "mainWindow" )
+        self.paneholder = self.builder.get_object( "paneholder" )
+        self.border     = self.builder.get_object( "border" )
 
         self.panesToColor = [ ]
         self.headingsToColor = [ ]
@@ -95,6 +103,7 @@ class MainWindow( object ):
         self.window.connect( "button-press-event", self.onButtonPress )
         self.window.connect( "key-press-event", self.onKeyPress )
         self.window.connect( "grab-broken-event", self.onGrabBroken )
+        self.window.connect("destroy", Gtk.main_quit)
 
         self.window.stick()
 
@@ -104,36 +113,25 @@ class MainWindow( object ):
         dic = {"on_window1_destroy" : self.quit_cb}
         wTree.signal_autoconnect( dic )
 
+        self.builder.connect_signals(Handler())
+
         self.gconf = EasyGConf( "/apps/mintMenu/" )
 
-        self.getSetGconfEntries()
-        self.SetupMintMenuBorder()
-        self.SetupMintMenuOpacity()
+        self.get_gconf_entries()
+        self.setup_mint_menu_border()
+        self.setup_mint_menu_opacity()
+        self.setup_tooltips()
 
+        self.populate_plugins()
+
+        self.setup_gconf_notify()
+
+    def setup_tooltips(self):
         self.tooltips = Gtk.Tooltips()
         if self.globalEnableTooltips and self.enableTooltips:
             self.tooltips.enable()
         else:
             self.tooltips.disable()
-
-        self.PopulatePlugins();
-
-        self.gconf.notifyAdd( "plugins_list", self.RegenPlugins )
-                
-        self.gconf.notifyAdd( "start_with_favorites", self.toggleStartWithFavorites )
-        self.gconf.notifyAdd( "/apps/panel/global/tooltips_enabled", self.toggleTooltipsEnabled )
-        self.gconf.notifyAdd( "tooltips_enabled", self.toggleTooltipsEnabled )
-
-        self.gconf.notifyAdd( "use_custom_color", self.toggleUseCustomColor )
-        self.gconf.notifyAdd( "custom_border_color", self.toggleCustomBorderColor )
-        self.gconf.notifyAdd( "custom_heading_color", self.toggleCustomHeadingColor )
-        self.gconf.notifyAdd( "custom_color", self.toggleCustomBackgroundColor )
-        self.gconf.notifyAdd( "border_width", self.toggleBorderWidth )
-        self.gconf.notifyAdd( "opacity", self.toggleOpacity )
-
-    def quit_cb (self):
-        Gtk.main_quit()
-        sys.exit(0)
 
     def wakePlugins( self ):
         # Call each plugin and let them know we're showing up
@@ -157,33 +155,31 @@ class MainWindow( object ):
 
     def toggleBorderWidth( self, client, connection_id, entry, args ):
         self.borderwidth = entry.get_value().get_int()
-        self.SetupMintMenuBorder()
+        self.setup_mint_menu_border()
 
     def toggleOpacity( self, client, connection_id, entry, args ):
         self.opacity = entry.get_value().get_int()
-        self.SetupMintMenuOpacity()
+        self.setup_mint_menu_opacity()
 
     def toggleUseCustomColor( self, client, connection_id, entry, args ):
         self.usecustomcolor = entry.get_value().get_bool()
-        self.SetupMintMenuBorder()
-        self.SetPaneColors( self.panesToColor )
-        self.SetHeadingStyle( self.headingsToColor )
-
+        self.setup_mint_menu_border()
+        self.set_pane_colors( self.panesToColor )
+        self.set_heading_style( self.headingsToColor )
 
     def toggleCustomBorderColor( self, client, connection_id, entry, args ):
         self.custombordercolor = entry.get_value().get_string()
-        self.SetupMintMenuBorder()
+        self.setup_mint_menu_border()
 
     def toggleCustomBackgroundColor( self, client, connection_id, entry, args ):
         self.customcolor = entry.get_value().get_string()
-        self.SetPaneColors( self.panesToColor )
+        self.set_pane_colors( self.panesToColor )
 
     def toggleCustomHeadingColor( self, client, connection_id, entry, args ):
         self.customheadingcolor = entry.get_value().get_string()
-        self.SetHeadingStyle( self.headingsToColor )
+        self.set_heading_style( self.headingsToColor )
 
-
-    def getSetGconfEntries( self ):
+    def get_gconf_entries(self):
         self.pluginlist          = self.gconf.get( "list-string", "plugins_list",['places', 'system_management', 'newpane', 'applications'] )
         self.dottedfile          = os.path.join( self.path, "dotted.png")
 
@@ -199,14 +195,14 @@ class MainWindow( object ):
         self.globalEnableTooltips = self.gconf.get( "bool", "/apps/panel/global/tooltips_enabled", True )        
         self.startWithFavorites   = self.gconf.get( "bool", "start_with_favorites", False )
 
-    def SetupMintMenuBorder( self ):
+    def setup_mint_menu_border( self ):
         if self.usecustomcolor:
             self.window.modify_bg( Gtk.StateType.NORMAL, Gdk.color_parse( self.custombordercolor ) )
         else:
             self.window.modify_bg( Gtk.StateType.NORMAL, self.window.rc_get_style().bg[ Gtk.StateType.SELECTED ] )
         self.border.set_padding( self.borderwidth, self.borderwidth, self.borderwidth, self.borderwidth )        
 
-    def SetupMintMenuOpacity( self ):
+    def setup_mint_menu_opacity( self ):
         print "Opacity is: " + str(self.opacity)
         opacity = float(self.opacity) / float(100)
         print "Setting opacity to: " + str(opacity)
@@ -226,7 +222,21 @@ class MainWindow( object ):
         except Exception, detail:
             print detail
 
-    def PopulatePlugins( self ):
+    def setup_gconf_notify(self):
+        self.gconf.notifyAdd( "plugins_list", self.RegenPlugins )
+
+        self.gconf.notifyAdd( "start_with_favorites", self.toggleStartWithFavorites )
+        self.gconf.notifyAdd( "/apps/panel/global/tooltips_enabled", self.toggleTooltipsEnabled )
+        self.gconf.notifyAdd( "tooltips_enabled", self.toggleTooltipsEnabled )
+
+        self.gconf.notifyAdd( "use_custom_color", self.toggleUseCustomColor )
+        self.gconf.notifyAdd( "custom_border_color", self.toggleCustomBorderColor )
+        self.gconf.notifyAdd( "custom_heading_color", self.toggleCustomHeadingColor )
+        self.gconf.notifyAdd( "custom_color", self.toggleCustomBackgroundColor )
+        self.gconf.notifyAdd( "border_width", self.toggleBorderWidth )
+        self.gconf.notifyAdd( "opacity", self.toggleOpacity )
+
+    def populate_plugins( self ):
         self.panesToColor = [ ]
         self.headingsToColor = [ ]
         start = time.time()
@@ -234,9 +244,9 @@ class MainWindow( object ):
         PluginPane.show()
         PaneLadder = Gtk.VBox( False, 0 )
         PluginPane.add( PaneLadder )
-        self.SetPaneColors( [ PluginPane ] )
+        self.set_pane_colors( [ PluginPane ] )
         ImageBox = Gtk.EventBox()
-        self.SetPaneColors( [ ImageBox ] )
+        self.set_pane_colors( [ ImageBox ] )
         ImageBox.show()
 
         seperatorImage = GdkPixbuf.Pixbuf.new_from_file( self.dottedfile )
@@ -291,7 +301,7 @@ class MainWindow( object ):
                     print u"Unable to load " + plugin + " plugin :-("
 
 
-                self.SetPaneColors( [MyPlugin.content_holder] )
+                self.set_pane_colors( [MyPlugin.content_holder] )
 
 
                 MyPlugin.content_holder.show()
@@ -302,14 +312,14 @@ class MainWindow( object ):
                     Align1 = Gtk.Alignment.new( 0, 0, 0, 0 )
                     Align1.set_padding( 10, 5, 10, 0 )
                     Align1.add( Label1 )
-                    self.SetHeadingStyle( [Label1] )
+                    self.set_heading_style( [Label1] )
                     Align1.show()
                     Label1.show()
 
                     if not hasattr( MyPlugin, 'sticky' ) or MyPlugin.sticky == True:
                         heading = Gtk.EventBox()
                         Align1.set_padding( 0, 0, 10, 0 )
-                        self.SetPaneColors( [heading] )
+                        self.set_pane_colors( [heading] )
                         heading.set_size_request( MyPlugin.width, 30 )
                     else:
                         heading = Gtk.HBox()
@@ -339,7 +349,7 @@ class MainWindow( object ):
                     if hasattr( MyPlugin, 'height' ):
                         MyPlugin.content_holder.set_size_request( -1, MyPlugin.height )
                     if hasattr( MyPlugin, 'itemstocolor' ):
-                        self.SetPaneColors( MyPlugin.itemstocolor )                   
+                        self.set_pane_colors( MyPlugin.itemstocolor )                   
                 except:
                     # create traceback
                     info = sys.exc_info()
@@ -357,9 +367,9 @@ class MainWindow( object ):
                 PluginPane = Gtk.EventBox()
                 PaneLadder = Gtk.VBox( False, 0 )
                 PluginPane.add( PaneLadder )
-                self.SetPaneColors( [PluginPane] )
+                self.set_pane_colors( [PluginPane] )
                 ImageBox = Gtk.EventBox()
-                self.SetPaneColors( [ImageBox] )
+                self.set_pane_colors( [ImageBox] )
                 ImageBox.show()
                 PluginPane.show_all()
 
@@ -382,7 +392,7 @@ class MainWindow( object ):
 
         #print u"Loading", (time.time() - start), "s"
 
-    def SetPaneColors( self, items ):
+    def set_pane_colors( self, items ):
         for item in items:
             if item not in self.panesToColor:
                 self.panesToColor.append( item )
@@ -394,8 +404,7 @@ class MainWindow( object ):
             for item in items:
                 item.modify_bg( Gtk.StateType.NORMAL, self.paneholder.rc_get_style().bg[ Gtk.StateType.NORMAL ] )
 
-
-    def SetHeadingStyle( self, items ):
+    def set_heading_style( self, items ):
         for item in items:
             if item not in self.headingsToColor:
                 self.headingsToColor.append( item )
@@ -408,8 +417,8 @@ class MainWindow( object ):
             headingcolor = Gdk.color_parse( self.customheadingcolor )
             attr = Pango.AttrForeground( headingcolor.red, headingcolor.green, headingcolor.blue, 0, -1 )
             HeadingStyle.insert( attr )
-#               else:
-#                       headingcolor = self.window.rc_get_style().bg[ Gtk.StateType.SELECTED ]
+        #else:
+            #headingcolor = self.window.rc_get_style().bg[ Gtk.StateType.SELECTED ]
 
         attr = Pango.AttrWeight( Pango.Weight.BOLD, 0, -1 )
         HeadingStyle.insert( attr )
@@ -442,8 +451,8 @@ class MainWindow( object ):
 
         gc.collect()
 
-        self.getSetGconfEntries()
-        self.PopulatePlugins()
+        self.get_gconf_entries()
+        self.populate_plugins()
 
         #print NAME+u" reloaded"
 
@@ -519,6 +528,7 @@ class MainWindow( object ):
     def hide(self, forceHide = False):        
         self.window.hide()
 
+
 class MenuWin( object ):
     def __init__( self, applet, iid ):
         self.applet = applet
@@ -573,7 +583,7 @@ class MenuWin( object ):
             else:
                 MenuWin.showMenu(self,self.mainwin.toggle)
                 self.mainwin.window.show()
-                #self.mainwin.wTree.get_widget( 'PluginTabs' ).set_curremenu_editor = SetGconf( self.client, "string", "/apps/usp/menu_editor", "mozo" )
+                #self.mainwin.wTree.get_object( 'PluginTabs' ).set_curremenu_editor = SetGconf( self.client, "string", "/apps/usp/menu_editor", "mozo" )
         except Exception, cause:
             print cause
 
@@ -769,7 +779,7 @@ class MenuWin( object ):
 
 
     def showPreferences( self, uicomponent, verb ):
-#               Execute( "mateconf-editor /apps/mintMenu" )
+        #Execute( "mateconf-editor /apps/mintMenu" )
         Execute( os.path.join( PATH, "mintMenuConfig.py" ) )
 
     def showMenuEditor( self, uicomponent, verb ):
@@ -848,15 +858,10 @@ def menu_factory( applet, iid ):
     applet.show()
     return True
 
-def quit_all(widget):
-    Gtk.main_quit()
-    sys.exit(0)
-
 if len(sys.argv) == 2 and sys.argv[1] == "run-in-window":
     Gdk.threads_init()
     main_window = Gtk.Window( Gtk.WindowType.TOPLEVEL )
     main_window.set_title( NAME )
-    main_window.connect( "destroy", quit_all )
     app = mateapplet.Applet()
     menu_factory( app, None )
     app.reparent( main_window )

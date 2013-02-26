@@ -18,7 +18,7 @@ except Exception, e:
 
 from subprocess import Popen, PIPE
 
-MINT_REMOVE_GLADE = "/home/davidx/mintRemove.glade"
+MINT_REMOVE_GLADE = "/usr/lib/linuxmint/mintMenu/mintRemove.glade"
 
 GObject.threads_init()
 
